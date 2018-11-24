@@ -24,7 +24,14 @@ class Hook {
   compile(options) {
     // TODO: Typo in this line of code.
     // https://github.com/webpack/tapable/blob/master/lib/Hook.js#L20
-    throw new Error("Abstract method: should be overriden");
+    // throw new Error("Abstract method: should be overriden");
+    return () => {
+      options.taps.forEach(tap => {
+        tap.fn(options.args);
+      })
+    } 
+    // options.taps.forEach(tap => {
+    // });
   }
 
   _createCall(type) {
@@ -38,16 +45,16 @@ class Hook {
   }
 
   tap(options, fn) {
-    let _options;
+    let _options = options;
     // Can pass string name to identify plugin
     // myCar.hooks.brake.tap("WarningLampPlugin")
-    if (typeof options === "string") {
+    if (typeof _options === "string") {
       _options = {
         name: options
       }
     }
 
-    if (typeof options !== "object" || options === null) {
+    if (typeof _options !== "object" || _options === null) {
       throw new Error("Invalid arguments to tap(options: Object, fn: function)")
     }
 
@@ -60,7 +67,7 @@ class Hook {
     if (typeof _options.name !== "string" || _options.name === "") {
       throw new Error("Missing name for tap");
     }
-    _options = this._runRegisterInterceptors(options);
+    _options = this._runRegisterInterceptors(_options);
     this._insert(_options);
   }
 
@@ -74,9 +81,8 @@ class Hook {
           _options = newOptions;
         }
       }
-
-      return _options;
     });
+    return _options;
   }
 
   isUsed() {
@@ -95,8 +101,58 @@ class Hook {
     }
   }
 
-  _insert(options) {
+  _insert(item) {
+    this._resetCompilation();
 
+    let before;
+    /*
+      https://github.com/webpack/tapable/blob/fc6621083f40d3dc7fbb77a5d321e13c600b00c5/lib/__tests__/Hook.js
+      Undocumented. You can specify a "tap" to come before others
+      hook.tap("OldPlugin");
+      hook.tap({ name: "NewPlugin", before: "OldPlugin" });
+
+      Other undocumented options are "before", "stage"
+    */
+
+    if (typeof item.before === "string") {
+      before = new Set([item.before]);
+    } else if (Array.isArray(item.before)) {
+      before = new Set(item.before);
+    }
+
+    // TODO: What is the stage used for?
+    let stage = 0;
+    if (typeof item.stage === "number") {
+      stage = item.stage;
+    }
+
+    let i = this.taps.length;
+    while (i > 0) {
+      // TODO: We're moving the taps backwards? Could we not use unshift?
+      i--;
+      const currentTap = this.taps[i];
+      this.taps[i + 1] = currentTap;
+
+      const currentTapStage = currentTap.stage || 0;
+
+      if (before) {
+        if (before.has(currentTap.name)) {
+          before.delete(currentTap.name);
+          continue;
+        }
+
+        if (before.size > 0) {
+          continue;
+        }
+      }
+
+      if (currentTapStage > stage) {
+        continue;
+      }
+      i++;
+      break;
+    }
+    this.taps[i] = item;
   }
 
   _resetCompilation() {
@@ -105,3 +161,31 @@ class Hook {
     this.promise = this._promise;
   }
 }
+
+function createCompileDelegate(name, type) {
+  return function lazyCompileHook(...args) {
+    this[name] = this._createCall(type);
+    return this[name](...args);
+  }
+}
+
+Object.defineProperties(Hook.prototype, {
+  _call: {
+    value: createCompileDelegate("call", "sync"),
+    configurable: true,
+    writable: true
+  },
+  _promise: {
+    value: createCompileDelegate("promise", "promise"),
+    configurable: true,
+    writable: true
+
+  },
+  _callAsync: {
+    value: createCompileDelegate("callAsync", "async"),
+    configurable: true,
+    writable: true
+  }
+})
+
+module.exports = Hook;

@@ -1,0 +1,29 @@
+{
+  "name": "tapable-practice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "dependencies": {
+    "webpack": "^4.26.0",
+    "webpack-cli": "^3.1.2",
+    "webpack-dev-server": "^3.1.10"
+  },
+  "devDependencies": {
+    "html-webpack-plugin": "^3.2.0"
+  },
+  "scripts": {
+    "start": "webpack-dev-server",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/newyork-anthonyng/practice-tapable.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/newyork-anthonyng/practice-tapable/issues"
+  },
+  "homepage": "https://github.com/newyork-anthonyng/practice-tapable#readme"
+}
