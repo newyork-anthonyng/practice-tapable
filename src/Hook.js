@@ -24,14 +24,7 @@ class Hook {
   compile(options) {
     // TODO: Typo in this line of code.
     // https://github.com/webpack/tapable/blob/master/lib/Hook.js#L20
-    // throw new Error("Abstract method: should be overriden");
-    return () => {
-      options.taps.forEach(tap => {
-        tap.fn(options.args);
-      })
-    } 
-    // options.taps.forEach(tap => {
-    // });
+    throw new Error("Abstract method: should be overriden");
   }
 
   _createCall(type) {
@@ -128,7 +121,6 @@ class Hook {
 
     let i = this.taps.length;
     while (i > 0) {
-      // TODO: We're moving the taps backwards? Could we not use unshift?
       i--;
       const currentTap = this.taps[i];
       this.taps[i + 1] = currentTap;
